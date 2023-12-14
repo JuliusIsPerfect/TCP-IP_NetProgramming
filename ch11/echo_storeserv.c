@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     pid = fork();
     if (pid == 0)
     {
-        FILE *fp = fopen("echomsg.txt", "wt");
+        FILE *fp = fopen("echomsg.txt", "wb");
         char msgbuf[BUF_SIZE];
         int i, len;
         for (int i = 0; i < 10; i++)

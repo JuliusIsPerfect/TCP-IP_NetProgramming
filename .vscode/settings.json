@@ -5,6 +5,9 @@
         "socket.h": "c",
         "inet.h": "c",
         "stdlib.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "fcntl.h": "c",
+        "struct_osockaddr.h": "c",
+        "sockaddr.h": "c"
     }
 }

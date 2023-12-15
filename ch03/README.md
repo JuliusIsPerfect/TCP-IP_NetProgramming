@@ -14,6 +14,7 @@ IP 是 Internet Protocol（网络协议）的简写，是为手法网络数据�
 
 - IPV4（Internet Protocol version 4）4 字节地址族
 - IPV6（Internet Protocol version 6）16 字节地址族
+- IPV6（Internet Protocol version 6）16 字节地址族
 
 两者之间的主要差别是 IP 地址所用的字节数，目前通用的是 IPV4 , IPV6 的普及还需要时间。
 
@@ -72,6 +73,7 @@ struct sockaddr_in
     char sin_zero[8];        //不使用
 };
 // 2 + 4 + 8 = 14 (bytes), 结构体转换后对应sockaddr的 char sa_data[14]
+// 2 + 4 + 8 = 14 (bytes), 结构体转换后对应sockaddr的 char sa_data[14]
 ```
 
 该结构体中提到的另一个结构体 in_addr 定义如下，它用来存放 32 位IP地址
@@ -79,6 +81,7 @@ struct sockaddr_in
 ```c
 struct in_addr
 {
+    in_addr_t s_addr; //32位IPv4地址
     in_addr_t s_addr; //32位IPv4地址
 }
 ```
@@ -105,14 +108,15 @@ struct in_addr
 - 成员 sin_family
 
     每种协议适用的地址族不同，比如，IPV4 使用 4 字节的地址族，IPV6 使用 16 字节的地址族。
+    每种协议适用的地址族不同，比如，IPV4 使用 4 字节的地址族，IPV6 使用 16 字节的地址族。
 
-    | 地址族（Address Family） | 含义                               |
-    | ------------------------ | ---------------------------------- |
-    | AF_INET                  | IPV4用的地址族                     |
-    | AF_INET6                 | IPV6用的地址族                     |
-    | AF_LOCAL                 | 本地通信中采用的 Unix 协议的地址族 |
+        | 地址族（Address Family） | 含义                               |
+        | ------------------------ | ---------------------------------- |
+        | AF_INET                  | IPV4用的地址族                     |
+        | AF_INET6                 | IPV6用的地址族                     |
+        | AF_LOCAL                 | 本地通信中采用的 Unix 协议的地址族 |
 
-    AF_LOACL 只是为了说明具有多种地址族而添加的。
+        AF_LOACL 只是为了说明具有多种地址族而添加的。
 
 - 成员 sin_port
 
@@ -120,21 +124,40 @@ struct in_addr
 
 - 成员 sin_addr
 
-  该成员保存 32 为IP地址信息，且也以网络字节序保存。它是一个结构体 in_addr，但结构体声明为uint32_t，因此当作一个32位整数即可。
+  该成员保存 32 为IP地址信息，且也以网络字节序保存。它是一个结构体 in_addr，但结构体声明为uint32_t，因此当作一个32位整数即可。。它是一个结构体 in_addr，但结构体声明为uint32_t，因此当作一个32位整数即可。
 
 - 成员 sin_zero
 
   无特殊含义。只是为结构体 sockaddr_in 的大小与结构体 sockaddr 保持一致而插入的成员。必需填充为0。
+  无特殊含义。只是为结构体 sockaddr_in 的大小与结构体 sockaddr 保持一致而插入的成员。必需填充为0。
 
+在之前的代码中 sockaddr_in 结构体变量地址值将以如下方式传递给 bind 函数。
 在之前的代码中 sockaddr_in 结构体变量地址值将以如下方式传递给 bind 函数。
 
 ```c
 if (bind(serv_sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
     error_handling("bind() error");
 ```
+```c
+if (bind(serv_sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1)
+    error_handling("bind() error");
+```
 
 此处 bind 第二个参数期望得到的是 sockaddr 结构体变量的地址值，包括地址族、端口号、IP地址等。
+此处 bind 第二个参数期望得到的是 sockaddr 结构体变量的地址值，包括地址族、端口号、IP地址等。
 
+```c
+struct sockaddr
+{
+    sa_family_t sin_family; //地址族
+    char sa_data[14];       //地址信息
+}
+```
+此结构体 sa_data 保存的地址信息中需要包含IP地址和端口号，剩余部分应该填充 0 ，但是这样对于包含地址的信息非常麻烦，所以出现了 sockaddr_in 结构体，然后强制**转换成 sockaddr 类型**，则生成符合 bind 条件的参数。
+
+struct sockaddr 是一个**通用**的套接字地址结构，而 struct sockaddr_in 和 struct sockaddr_in6 是特定于IPv4和IPv6的套接字地址结构。这些特定的结构体在**内存布局**上与 struct sockaddr **兼容**，因此可以安全地将它们的地址转换为 struct sockaddr *。
+
+> 网络API函数（如 bind、connect、accept等）通常需要一个 struct sockaddr * 类型的参数。这些函数不关心具体的地址类型（IPv4或IPv6），它们只需要知道如何处理套接字地址。因此，我们可以将具体的地址结构体类型（如 struct sockaddr_in 或 struct sockaddr_in6）转换为通用的 struct sockaddr 类型，并传递给这些函数。
 ```c
 struct sockaddr
 {
@@ -173,6 +196,7 @@ CPU 保存数据的方式有两种，这意味着 CPU 解析数据的方式也�
 
 - 大端序（Big Endian）：高位字节存放到低位地址
 - 小端序（Little Endian）：低位字节存放到低位地址
+- 小端序（Little Endian）：低位字节存放到低位地址
 
 ![big.png](https://i.loli.net/2019/01/13/5c3ac9c1b2550.png)
 ![small.png](https://i.loli.net/2019/01/13/5c3ac9c1c3348.png)
@@ -181,7 +205,7 @@ CPU 保存数据的方式有两种，这意味着 CPU 解析数据的方式也�
 
 ![zijiexu.png](https://i.loli.net/2019/01/13/5c3aca956c8e9.png)
 
-因为这种原因，所以在通过网络传输数据时必须约定统一的方式，这种约定被称为网络字节序，非常简单，**统一为大端序**。即，先把数据数组转化成大端序格式再进行网络传输。
+因为这种原因，所以在通过网络传输数据时必须约定统一的方式，这种约定被称为网络字节序，非常简单，****统一为大端序****。即，先把数据数组转化成大端序格式再进行网络传输。
 
 #### 3.3.2 字节序转换
 
@@ -204,9 +228,15 @@ unsigned long ntohl(unsigned long);
 通常以s结尾的函数，s代表2个字节，因此用于端口号转换；以l结尾的函数中，l代表4个字节，因此用于IP地址转换。
 
 > 即使在大端序系统中，也有必要编写与大端序无关的统一代码，即经过主机字节序转换为网络字节序的过程。
+- l 代表 long（Linux中long占4个字节）
+
+通常以s结尾的函数，s代表2个字节，因此用于端口号转换；以l结尾的函数中，l代表4个字节，因此用于IP地址转换。
+
+> 即使在大端序系统中，也有必要编写与大端序无关的统一代码，即经过主机字节序转换为网络字节序的过程。
 
 下面的代码是示例，说明以上函数调用过程：
 
+[endian_conv.c](./endian_conv.c)
 [endian_conv.c](./endian_conv.c)
 
 ```cpp
@@ -303,7 +333,7 @@ Network ordered integer addr: 0x4030201
 Error occured!
 ```
 
-网络字节序是大端序，所以"1.2.3.4"将会被转换为0x01020304。然而，由于大多数现代计算机使用小端序，所以在内存中，这个值实际上会被存储为0x04030201。
+网络字节序是大端序，所以'1.2.3.4'将会被转换为0x01020304。然而，由于大多数现代计算机使用小端序，所以在内存中，这个值实际上会被存储为0x04030201。
 
 1个字节能表示的最大整数是255，所以代码中 addr2 是错误的IP地址。从运行结果看，inet_addr 不仅可以转换地址，还可以检测有效性。
 
@@ -431,6 +461,25 @@ addr.sin_addr.s_addr = inet_addr(serv_ip); //基于字符串的IP地址初始化
 addr.sin_port = htons(atoi(serv_port));    //基于字符串的IP地址端口号初始化
 ```
 
+INADDR_ANY  
+> 采用常数 INADDR_ANY，可自动获取服务器端的计算机IP地址。若同一计算机中已分配多个IP地址（如路由器），则只要端口号一致，就可以从不同IP地址接收数据。
+
+服务器端常见套接字初始化过程
+```c
+int serv_sock;
+struct sockaddr_in serv_addr;
+char *serv_port = "9190";
+
+serv_sock = socket(PF_INET, SOCK_STREAM, 0);
+
+memset(&serv_addr, 0, sizeof(addr));
+addr.sin_family = AF_INET;
+addr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+addr.sin_port = htons(atoi(serv_port));
+
+bind(serv_sock, (struct sockaddr * )&serv_addr, sizeof(serv_addr));
+```
+
 ### 3.5 基于 Windows 的实现
 
 略
@@ -443,7 +492,7 @@ addr.sin_port = htons(atoi(serv_port));    //基于字符串的IP地址端口号
 
    答：主要差别是IP地址所用的字节数，目前通用的是IPV4，目前IPV4的资源已耗尽，所以诞生了IPV6，它具有更大的地址空间。
 
-2. **通过 IPV4 网络 ID 、主机 ID 及路由器的关系说明公司局域网的计算机传输数据的过程**
+2. **通过 IPV4 网络 ID 、主机 ID 及路由器的关系说明向公司局域网的计算机传输数据的过程**
 
    答：网络ID是为了区分网络而设置的一部分IP地址，假设向`www.baidu.com`公司传输数据，该公司内部构建了局域网。因为首先要向`baidu.com`传输数据，也就是说并非一开始就浏览所有四字节IP地址，首先找到网络地址，进而由`baidu.com`（构成网络的路由器）接收到数据后，传输到主机地址。比如向 203.211.712.103 传输数据，那就先找到 203.211.172 然后由这个网络的网关找主机号为 172 的机器传输数据。
 
@@ -476,7 +525,7 @@ addr.sin_port = htons(atoi(serv_port));    //基于字符串的IP地址端口号
    **而调用时则用：**
 
    ```c
-   bind(serv_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)
+   bind(serv_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
    ```
 
    **此处 serv_addr 为 sockaddr_in 结构体变量。与函数原型不同，传入的是 sockaddr_in 结构体变量，请说明原因。**
@@ -485,11 +534,22 @@ addr.sin_port = htons(atoi(serv_port));    //基于字符串的IP地址端口号
 
 8. **请解释大端序，小端序、网络字节序，并说明为何需要网络字节序。**
 
-   答：CPU 向内存保存数据有两种方式，大端序是高位字节存放低位地址，小端序是高位字节存放高位地址，网络字节序是为了方便传输的信息统一性，统一成了大端序。
+   答：CPU 向内存保存数据有两种方式，大端序是高位字节存放低位地址，小端序是高位字节存放高位地址，网络字节序是为了方便传输的信息统一性，统一成了大端序。无论发送和接收系统的字节序如何，数据都可以被正确地解释。
 
 9. **大端序计算机希望把 4 字节整数型 12 传递到小端序计算机。请说出数据传输过程中发生的字节序变换过程。**
 
-   答：0x12->0x21
+   答:
+    1. 大端序计算机准备发送数据时，首先将整数12（在内存中表示为00 00 00 0C）放入网络数据包。
+
+    2. 在发送数据包之前，大端序计算机不需要进行任何转换，因为网络字节序就是大端序。
+
+    3. 数据包通过网络发送到小端序计算机。
+
+    4. 小端序计算机接收到数据包后，将数据从网络字节序（大端序）转换为小端序。这意味着，它将接收到的字节序00 00 00 0C转换为0C 00 00 00。
+
+    5. 转换后的数据（0C 00 00 00）现在可以在小端序计算机中正确地表示整数12。
+
+
 
 10. **怎样表示回送地址？其含义是什么？如果向会送地址处传输数据将会发生什么情况？**
 

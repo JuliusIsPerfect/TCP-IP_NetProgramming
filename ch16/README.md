@@ -36,7 +36,7 @@ shutdown(sock,SHUT_WR);
 
 当时说过调用 shutdown 函数的基于半关闭的 EOF 传递方法。第十章的 [echo_mpclient.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch10/echo_mpclient.c) 添加了半关闭的相关代码。但是还没有讲采用 fdopen 函数怎么半关闭。那么是否是通过 fclose 函数关闭流呢？我们先试试
 
-下面是服务端和客户端码：
+下面是服务器端和客户端码：
 
 - [sep_clnt.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_clnt.c)
 - [sep_serv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_serv.c)
@@ -54,15 +54,15 @@ gcc sep_serv.c -o serv
 
 ![](https://i.loli.net/2019/01/30/5c512086a75d9.png)
 
-从运行结果可以看出，服务端最终没有收到客户端发送的信息。那么这是什么原因呢？
+从运行结果可以看出，服务器端最终没有收到客户端发送的信息。那么这是什么原因呢？
 
-原因是：服务端代码的 `fclose(writefp);` 这一句，完全关闭了套接字而不是半关闭。这才是这一章需要解决的问题。
+原因是：服务器端代码的 `fclose(writefp);` 这一句，完全关闭了套接字而不是半关闭。这才是这一章需要解决的问题。
 
 ### 16.2 文件描述符的的复制和半关闭
 
 #### 16.2.1 终止「流」时无法半关闭原因
 
-下面的图描述的是服务端代码中的两个FILE 指针、文件描述符和套接字中的关系。
+下面的图描述的是服务器端代码中的两个FILE 指针、文件描述符和套接字中的关系。
 
 ![](https://i.loli.net/2019/01/30/5c5121da89955.png)
 

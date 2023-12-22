@@ -192,13 +192,13 @@ gcc echo_storeserv.c -o serv
 ./serv 9190
 ```
 
-此服务端配合第 10 章的客户端 [echo_mpclient.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch10/echo_mpclient.c) 使用，运行结果如下图:
+此服务器端配合第 10 章的客户端 [echo_mpclient.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch10/echo_mpclient.c) 使用，运行结果如下图:
 
 ![](https://s2.ax1x.com/2019/01/22/kFUCct.png)
 
 ![](https://s2.ax1x.com/2019/01/22/kFUAHS.png)
 
-从图上可以看出，服务端已经生成了文件，把客户端的消息保存可下来，只保存了10次消息。
+从图上可以看出，服务器端已经生成了文件，把客户端的消息保存可下来，只保存了10次消息。
 
 ### 11.3 习题
 

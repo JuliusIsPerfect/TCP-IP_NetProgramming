@@ -126,7 +126,7 @@ Message from server : Hello World!
 Function read call count: 13
 ```
 
-从运行结果可以看出服务端发送了13字节的数据，客户端调用13次 read 函数进行读取。
+从运行结果可以看出服务器端发送了13字节的数据，客户端调用13次 read 函数进行读取。
 
 ### 2.2 Windows 平台下的实现及验证
 

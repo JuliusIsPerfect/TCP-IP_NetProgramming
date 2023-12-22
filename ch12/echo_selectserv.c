@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
         error_handling("listen() error");
 
     FD_ZERO(&reads);
-    FD_SET(serv_sock, &reads); //注册服务端套接字
+    FD_SET(serv_sock, &reads); //注册服务器端套接字
     fd_max = serv_sock;
 
     while (1)
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         {
             if (FD_ISSET(i, &cpy_reads)) //查找发生变化的套接字文件描述符
             {
-                if (i == serv_sock) //如果是服务端套接字时,受理连接请求
+                if (i == serv_sock) //如果是服务器端套接字时,受理连接请求
                 {
                     adr_sz = sizeof(clnt_adr);
                     clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_adr, &adr_sz);
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
                         fd_max = clnt_sock;
                     printf("Connected client: %d \n", clnt_sock);
                 }
-                else //不是服务端套接字时
+                else //不是服务器端套接字时
                 {
                     str_len = read(i, buf, BUF_SIZE); //i指的是当前发起请求的客户端
                     if (str_len == 0)

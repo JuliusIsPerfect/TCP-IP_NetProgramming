@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
         fputs("Input message(Q to quit): ", stdout);
         fgets(message, BUF_SIZE, stdin);
 
-        if (!strcmp(message, "q\n") || !strcmp(message, "Q\n"))
+        if (!strcmp(message, "q\n") || !strcmp(message, "Q\n")) //strcmp()相等返回0
             break;
 
         write(sock, message, strlen(message));

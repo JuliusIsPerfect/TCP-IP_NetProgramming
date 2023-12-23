@@ -1,4 +1,4 @@
-## 第 5 章 基于 TCP 的服务器端/客户端（2）
+## 第 5 章 基于 TCP 的服务器器端/客户端（2）
 
 本章代码，在[TCP-IP-NetworkNote](https://github.com/riba2534/TCP-IP-NetworkNote)中可以找到。
 

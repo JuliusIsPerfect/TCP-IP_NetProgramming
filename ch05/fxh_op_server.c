@@ -59,13 +59,13 @@ int main(int argc, char* argv[]){
     int nums[cnt];
 
     for (int i = 0; i < cnt; i++){
-        read(clnt_sock, &cnt, BUF_SIZE);
-        printf("nums[%d] = %d\n", i, cnt);
+        read(clnt_sock, &nums[i], BUF_SIZE);
+        printf("nums[%d] = %d\n", i, nums[i]);
         // nums[i] = cnt_c - '0';
     }
 
     read(clnt_sock, &operator, BUF_SIZE);
-    printf("operator = %c", operator);
+    printf("operator = %c\n", operator);
 
     int ans = 0;
     if (operator == '+'){
@@ -81,6 +81,8 @@ int main(int argc, char* argv[]){
     }
 
     printf("%d\n", ans);
+    write(clnt_sock, &ans, sizeof(ans));
+
 
     close(clnt_sock);
     close(serv_sock);

@@ -2,8 +2,8 @@
 triple:          'arm64-apple-darwin'
 binary-path:     '/Users/fxh/Documents/projs/TCPIPNetProgramming/ch05/fxh_op_server'
 relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _error_handling, symObjAddr: 0x0, symBinAddr: 0x100003968, symSize: 0x40 }
-  - { offsetInCU: 0x8D, offset: 0x8D, size: 0x8, addend: 0x0, symName: _error_handling, symObjAddr: 0x0, symBinAddr: 0x100003968, symSize: 0x40 }
-  - { offsetInCU: 0xB1, offset: 0xB1, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x40, symBinAddr: 0x1000039A8, symSize: 0x484 }
-  - { offsetInCU: 0x227, offset: 0x227, size: 0x8, addend: 0x0, symName: __OSSwapInt16, symObjAddr: 0x4C4, symBinAddr: 0x100003E2C, symSize: 0x24 }
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _error_handling, symObjAddr: 0x0, symBinAddr: 0x100003934, symSize: 0x40 }
+  - { offsetInCU: 0x8D, offset: 0x8D, size: 0x8, addend: 0x0, symName: _error_handling, symObjAddr: 0x0, symBinAddr: 0x100003934, symSize: 0x40 }
+  - { offsetInCU: 0xB1, offset: 0xB1, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x40, symBinAddr: 0x100003974, symSize: 0x4AC }
+  - { offsetInCU: 0x227, offset: 0x227, size: 0x8, addend: 0x0, symName: __OSSwapInt16, symObjAddr: 0x4EC, symBinAddr: 0x100003E20, symSize: 0x24 }
 ...

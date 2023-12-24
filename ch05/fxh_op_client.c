@@ -38,20 +38,25 @@ int main(int argc, char* argv[]){
         error_handling("connect() error!");
     else printf("connected\n");
 
-    int num;
+    int num, cnt;
     char operator;
 
     fputs("input nums length: ", stdout);
-    scanf("%d", &num);
-    write(sock, &num, sizeof(num));
-    for (int i = 0; i < num; i++){
+    scanf("%d", &cnt);
+    write(sock, &cnt, sizeof(cnt));
+    for (int i = 0; i < cnt; i++){
         printf("input num[%d]: ", i);
         scanf("%d", &num);
         write(sock, &num, sizeof(num));
     }
+    fgetc(stdin);
     printf("input operator: ");
     scanf("%c", &operator);
     write(sock, &operator, sizeof(operator));
+
+    int ans;
+    read(sock, &ans, sizeof(ans));
+    printf("answer = %d\n", ans);
 
     close(sock);
     return 0;

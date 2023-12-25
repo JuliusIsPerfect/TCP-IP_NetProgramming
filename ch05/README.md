@@ -69,21 +69,14 @@ while (1)
 
 我自己的实现：
 
-- [My_op_server.c](./My_op_server.c)
-- [My_op_client.c](./My_op_client.c)
-
-编译：
-
-```shell
-gcc My_op_client.c -o myclient
-gcc My_op_server.c -o myserver
-```
+- [fxh_op_server.c](./fxh_op_server.c)
+- [fxh_op_client.c](./fxh_op_client.c)
 
 结果：
 
-![](https://i.loli.net/2019/01/15/5c3d966b81c03.png)
+- ![fxh_op_server](../img/fxh_op_server_ubuntu.png)
+- ![fxh_op_client](../img/fxh_op_client_ubuntu.png)
 
-其实主要是对程序的一点点小改动，只需要再客户端固定好发送的格式，服务器端按照固定格式解析，然后返回结果即可。
 
 书上的实现：
 

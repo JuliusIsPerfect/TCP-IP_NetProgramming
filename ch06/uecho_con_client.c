@@ -39,9 +39,9 @@ int main(int argc, char *argv[])
         fgets(message, sizeof(message), stdin);
         if (!strcmp(message, "q\n") || !strcmp(message, "Q\n"))
             break;
-        //向服务器传输数据,会自动给自己分配IP地址和端口号
 
         /*
+        //向服务器传输数据,会自动给自己分配IP地址和端口号
         sendto(sock, message, strlen(message), 0,
                (struct sockaddr *)&serv_adr, sizeof(serv_adr));
         */

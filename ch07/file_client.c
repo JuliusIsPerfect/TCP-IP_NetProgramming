@@ -23,7 +23,8 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    fp = fopen("receive.cpp", "wb");
+    //创建新文件以保存服务器端传输的文件数据
+    fp = fopen("receive.dat", "wb");
     sd = socket(PF_INET, SOCK_STREAM, 0);
 
     memset(&serv_adr, 0, sizeof(serv_adr));
@@ -33,10 +34,12 @@ int main(int argc, char *argv[])
 
     connect(sd, (struct sockaddr *)&serv_adr, sizeof(serv_adr));
 
+    //接收数据并保存到第27行创建的文件，直到接收 EOF
     while ((read_cnt = read(sd, buf, BUF_SIZE)) != 0)
         fwrite((void *)buf, 1, read_cnt, fp);
 
     puts("Received file data");
+    //向服务器端发送感谢信息。若服务器端未关闭输入流，则可接收此消息。
     write(sd, "Thank you", 10);
     fclose(fp);
     close(sd);

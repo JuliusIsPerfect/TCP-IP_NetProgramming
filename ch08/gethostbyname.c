@@ -20,10 +20,10 @@ int main(int argc, char *argv[])
         error_handling("gethost... error");
     // 输出官方域名
     printf("Official name: %s \n", host->h_name);
-    // Aliases 貌似是解析的 cname 域名？
-    for (i = 0; host->h_aliases[i]; i++)
+    // 输出除官方域名以外的域名
+    for (i = 0; host->h_aliases[i]; i++) // 遍历字符指针数组
         printf("Aliases %d: %s \n", i + 1, host->h_aliases[i]);
-    //看看是不是ipv4
+    // 看看是不是ipv4
     printf("Address type: %s \n",
            (host->h_addrtype == AF_INET) ? "AF_INET" : "AF_INET6");
     // 输出ip地址信息

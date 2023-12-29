@@ -7,7 +7,7 @@ void error_handling(char *message);
 int main(int argc, char *argv[])
 {
     int sock;
-    int snd_buf = 1024 * 3, rcv_buf = 1024 * 3;
+    int snd_buf = 0, rcv_buf = 1024 * 3;
     int state;
     socklen_t len;
 

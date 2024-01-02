@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
     else
     {
         printf("Child Process ID: %d \n", pid);
+        // 如果父进程终止，处于僵尸状态的子进程将同时销毁。因此，延缓父进程的执行以验证僵尸进程。
         sleep(30);
     }
 

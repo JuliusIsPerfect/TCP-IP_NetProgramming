@@ -8,6 +8,9 @@
         "string.h": "c",
         "fcntl.h": "c",
         "struct_osockaddr.h": "c",
-        "sockaddr.h": "c"
+        "sockaddr.h": "c",
+        "wait.h": "c",
+        "signal.h": "c",
+        "sigaction.h": "c"
     }
 }

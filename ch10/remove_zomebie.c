@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
+// 不加这个头文件，报错：不允许使用不完整的类类型 "struct sigaction"
+#include <bits/sigaction.h>
 
 void read_childproc(int sig)
 {

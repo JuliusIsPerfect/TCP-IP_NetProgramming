@@ -3,7 +3,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/wait.h>
-// 不加这个头文件，报错：不允许使用不完整的类类型 "struct sigaction"
+// ubuntu不加这个头文件，报错：不允许使用不完整的类类型 "struct sigaction"
+// mac不需要加上这个头文件也可以创建sigaction，加上报错。
 #include <bits/sigaction.h>
 
 void read_childproc(int sig)
@@ -20,6 +21,8 @@ void read_childproc(int sig)
 int main(int argc, char *argv[])
 {
     pid_t pid;
+    // 注册 SIGCHLD 信号对应的处理器。若子进程终止，则调用 read_childproc。 
+    // 处理函数中调用了waitpid函数，所以子进程将正常终止，不会成为僵尸进程。
     struct sigaction act;
     act.sa_handler = read_childproc;
     sigemptyset(&act.sa_mask);

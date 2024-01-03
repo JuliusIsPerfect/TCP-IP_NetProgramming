@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     act.sa_handler = read_childproc; //防止僵尸进程
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    state = sigaction(SIGCHLD, &act, 0);         //注册信号处理器,把成功的返回值给 state
+    state = sigaction(SIGCHLD, &act, 0);         //注册信号处理器，把成功的返回值给 state
     serv_sock = socket(PF_INET, SOCK_STREAM, 0); //创建服务器端套接字
     memset(&serv_adr, 0, sizeof(serv_adr));
     serv_adr.sin_family = AF_INET;
@@ -49,16 +49,16 @@ int main(int argc, char *argv[])
             continue;
         else
             puts("new client connected...");
-        pid = fork(); //此时，父子进程分别带有一个套接字
+        pid = fork(); //父子进程分别带有一个（受理客户端连接请求时创建的）套接字
         if (pid == -1)
         {
             close(clnt_sock);
             continue;
         }
-        if (pid == 0) //子进程运行区域,此部分向客户端提供回声服务
+        if (pid == 0) //子进程运行区域，此部分向客户端提供回声服务
         {
-            close(serv_sock); //关闭服务器套接字，因为从父进程传递到了子进程
-            while ((str_len = read(clnt_sock, buf, BUFSIZ)) != 0)
+            close(serv_sock); //关闭服务器套接字，因为服务器套接字文件描述符同样也传递到子进程
+            while ((str_len = read(clnt_sock, buf, BUF_SIZE)) != 0)
                 write(clnt_sock, buf, str_len);
 
             close(clnt_sock);

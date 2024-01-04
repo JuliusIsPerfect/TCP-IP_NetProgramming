@@ -18,7 +18,7 @@
 #include <unistd.h>
 int pipe(int filedes[2]);
 /*
-成功时返回 0 ，失败时返回 -1
+成功时返回 0，失败时返回 -1
 filedes[0]: 通过管道接收数据时使用的文件描述符，即管道出口
 filedes[1]: 通过管道传输数据时使用的文件描述符，即管道入口
 */
@@ -26,34 +26,7 @@ filedes[1]: 通过管道传输数据时使用的文件描述符，即管道入�
 
 父进程创建函数时将创建管道，同时获取对应于出入口的文件描述符，此时父进程可以读写同一管道。但父进程的目的是与子进程进行数据交换，因此需要将入口或出口中的 1 个文件描述符传递给子进程。下面的例子是关于该函数的使用方法：
 
-- [pipe1.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch11/pipe1.c)
-
-```c
-#include <stdio.h>
-#include <unistd.h>
-#define BUF_SIZE 30
-
-int main(int argc, char *argv[])
-{
-    int fds[2];
-    char str[] = "Who are you?";
-    char buf[BUF_SIZE];
-    pid_t pid;
-    // 调用  pipe 函数创建管道，fds 数组中保存用于 I/O 的文件描述符
-    pipe(fds);
-    pid = fork(); //子进程将同时拥有创建管道获取的2个文件描述符，复制的并非管道，而是文件描述符
-    if (pid == 0)
-    {
-        write(fds[1], str, sizeof(str));
-    }
-    else
-    {
-        read(fds[0], buf, BUF_SIZE);
-        puts(buf);
-    }
-    return 0;
-}
-```
+- [pipe1.c](./pipe1.c)
 
 编译运行：
 
@@ -80,41 +53,7 @@ Who are you?
 
 下面是双向通信的示例：
 
-- [pipe2.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch11/pipe2.c)
-
-```c
-#include <stdio.h>
-#include <unistd.h>
-#define BUF_SIZE 30
-
-int main(int argc, char *argv[])
-{
-    int fds[2];
-    char str1[] = "Who are you?";
-    char str2[] = "Thank you for your message";
-    char buf[BUF_SIZE];
-    pid_t pid;
-
-    pipe(fds);
-    pid = fork();
-    if (pid == 0)
-    {
-        write(fds[1], str1, sizeof(str1));
-        sleep(2);
-        read(fds[0], buf, BUF_SIZE);
-        printf("Child proc output: %s \n", buf);
-    }
-    else
-    {
-        read(fds[0], buf, BUF_SIZE);
-        printf("Parent proc output: %s \n", buf);
-        write(fds[1], str2, sizeof(str2));
-        sleep(3);
-    }
-    return 0;
-}
-
-```
+- [pipe2.c](./pipe2.c)
 
 编译运行：
 
@@ -130,46 +69,19 @@ Parent proc output: Who are you?
 Child proc output: Thank you for your message
 ```
 
-运行结果是正确的，但是如果注释掉第18行的代码，就会出现问题，导致一直等待下去。因为数据进入管道后变成了无主数据。也就是通过 read 函数先读取数据的进程将得到数据，即使该进程将数据传到了管道。因为，注释第18行会产生问题。第19行，自己成将读回自己在第 17 行向管道发送的数据。结果父进程调用 read 函数后，无限期等待数据进入管道。
+运行结果是正确的，但是如果注释掉第18行的代码，就会出现问题，导致一直等待下去。
 
-当一个管道不满足需求时，就需要创建两个管道，各自负责不同的数据流动，过程如下图所示：
+> 向管道传递数据时，先读的进程会把数据取走。
+
+因为数据进入管道后变成了无主数据。也就是通过 read 函数先读取数据的进程将得到数据，即使该进程将数据传到了管道。因此注释掉子进程的`sleep(2)`会产生问题。子进程读回自己向管道发送的数据。结果父进程调用 read 函数后将无限期等待数据进入管道。
+
+当一个管道无法完成双向通信任务时，就需要创建两个管道，各自负责不同的数据流动，过程如下图所示：
 
 ![](https://s2.ax1x.com/2019/01/22/kFJW0e.png)
 
 下面采用上述模型改进 `pipe2.c` 。
 
-- [pipe3.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch11/pipe3.c)
-
-```c
-#include <stdio.h>
-#include <unistd.h>
-#define BUF_SIZE 30
-
-int main(int argc, char *argv[])
-{
-    int fds1[2], fds2[2];
-    char str1[] = "Who are you?";
-    char str2[] = "Thank you for your message";
-    char buf[BUF_SIZE];
-    pid_t pid;
-
-    pipe(fds1), pipe(fds2);
-    pid = fork();
-    if (pid == 0)
-    {
-        write(fds1[1], str1, sizeof(str1));
-        read(fds2[0], buf, BUF_SIZE);
-        printf("Child proc output: %s \n", buf);
-    }
-    else
-    {
-        read(fds1[0], buf, BUF_SIZE);
-        printf("Parent proc output: %s \n", buf);
-        write(fds2[1], str2, sizeof(str2));
-    }
-    return 0;
-}
-```
+- [pipe3.c](./pipe3.c)
 
 上面通过创建两个管道实现了功能，此时，不需要额外再使用 sleep 函数。运行结果和上面一样。
 
@@ -183,7 +95,7 @@ int main(int argc, char *argv[])
 
 实现该任务将创建一个新进程，从向客户端提供服务的进程读取字符串信息，下面是代码：
 
-- [echo_storeserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch11/echo_storeserv.c)
+- [echo_storeserv.c](./echo_storeserv.c)
 
 编译运行：
 

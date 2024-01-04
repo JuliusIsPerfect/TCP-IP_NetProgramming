@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #define BUF_SIZE 30
 
 int main(int argc, char *argv[])

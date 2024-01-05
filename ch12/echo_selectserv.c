@@ -42,20 +42,20 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        cpy_reads = reads;
+        cpy_reads = reads; // 防止用于注册描述符的fd_set reads 被 select 函数修改
         timeout.tv_sec = 5;
         timeout.tv_usec = 5000;
 
-        if ((fd_num = select(fd_max + 1, &cpy_reads, 0, 0, &timeout)) == -1) //开始监视,每次重新监听
+        if ((fd_num = select(fd_max + 1, &cpy_reads, 0, 0, &timeout)) == -1)
             break;
         if (fd_num == 0)
             continue;
 
-        for (i = 0; i < fd_max + 1; i++)
+        for (i = 0; i < fd_max + 1; i++) // 遍历 0——fd-max 号套接字
         {
-            if (FD_ISSET(i, &cpy_reads)) //查找发生变化的套接字文件描述符
+            if (FD_ISSET(i, &cpy_reads)) //查找发生状态变化（有接收数据的套接字）的文件描述符
             {
-                if (i == serv_sock) //如果是服务器端套接字时,受理连接请求
+                if (i == serv_sock) //如果是服务器端套接字时，受理连接请求
                 {
                     adr_sz = sizeof(clnt_adr);
                     clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_adr, &adr_sz);
@@ -65,9 +65,10 @@ int main(int argc, char *argv[])
                         fd_max = clnt_sock;
                     printf("Connected client: %d \n", clnt_sock);
                 }
-                else //不是服务器端套接字时
+                else //发生变化的套接字不是服务器端套接字时，即有要接收的数据时
                 {
                     str_len = read(i, buf, BUF_SIZE); //i指的是当前发起请求的客户端
+                    // 需要区分接收的数据是字符串还是代表断开连接的EOF
                     if (str_len == 0)
                     {
                         FD_CLR(i, &reads);

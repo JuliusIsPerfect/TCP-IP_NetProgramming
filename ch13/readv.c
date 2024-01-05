@@ -14,9 +14,9 @@ int main(int argc, char *argv[])
     int str_len;
 
     vec[0].iov_base = buf1;
-    vec[0].iov_len = 5;
+    vec[0].iov_len = 5;  // 无论 buf1 的大小是多少，最多仅能保存 5 个字节
     vec[1].iov_base = buf2;
-    vec[1].iov_len = BUF_SIZE;
+    vec[1].iov_len = BUF_SIZE;  // 剩余数据保存到 vec[1] 中注册的缓冲
 
     str_len = readv(0, vec, 2);
     printf("Read bytes: %d \n", str_len);

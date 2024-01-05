@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
+#include <bits/sigaction.h>
 
 #define BUF_SIZE 30
 void error_handling(char *message);
@@ -44,7 +45,7 @@ int main(int argc, char *argv[])
     recv_sock = accept(acpt_sock, (struct sockaddr *)&serv_adr, &serv_adr_sz);
     //将文件描述符 recv_sock 指向的套接字拥有者（F_SETOWN）改为把getpid函数返回值用做id的进程
     fcntl(recv_sock, F_SETOWN, getpid());
-    state = sigaction(SIGURG, &act, 0); //SIGURG 是一个信号，当接收到 MSG_OOB 紧急消息时，系统产生SIGURG信号
+    state = sigaction(SIGURG, &act, 0); // 接收到 MSG_OOB 紧急消息时，系统产生 SIGURG 信号，并调用注册的信号处理函数
 
     while ((str_len = recv(recv_sock, buf, sizeof(buf), 0)) != 0)
     {

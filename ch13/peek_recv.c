@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 
     buf[str_len] = 0;
     printf("Buffering %d bytes : %s \n", str_len, buf);
-    //再次调用 recv 函数，这一次没有设置任何可选项，所以可以直接从缓冲区读出
+    //再次调用 recv 函数，这一次没有设置任何可选项。所以本次读取的数据将从输入缓冲中删除
     str_len = recv(recv_sock, buf, sizeof(buf) - 1, 0);
     buf[str_len] = 0;
     printf("Read again: %s \n", buf);

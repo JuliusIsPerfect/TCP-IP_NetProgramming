@@ -8,7 +8,7 @@
 
 下面是标准 I/O 函数的两个优点：
 
-- 标准 I/O 函数具有良好的移植性
+- 标准 I/O 函数具有良好的移植性(Portablity)
 - 标准 I/O 函数可以利用缓冲提高性能
 
 创建套接字时，操作系统会准备 I/O 缓冲。此缓冲在执行 TCP 协议时发挥着非常重要的作用。此时若使用标准 I/O 函数，将得到额外的缓冲支持。如下图：
@@ -17,25 +17,29 @@
 
 假设使用 fputs 函数进行传输字符串 「Hello」时，首先将数据传递到标准 I/O 缓冲，然后将数据移动到套接字输出缓冲，最后将字符串发送到对方主机。
 
-设置缓冲的主要目的是为了提高性能。从以下两点可以说明性能的提高：
+标准 I/O 函数缓冲的主要目的是为了提高性能，但套接字中的缓冲主要是为了实现 TCP 协议而设立的。例如，TCP 传输中丢失数据时将再次传递，而再次发送数据则意味着在某地保存了数据。存在什么地方呢？套接字的输出缓冲。
+
+从以下两点可以说明性能的提高：
 
 - 传输的数据量
-- 数据向输出缓冲移动的次数。
+- 数据向输出缓冲移动的次数
 
 比较 1 个字节的数据发送 10 次的情况和 10 个数据包发送 1 次的情况。发送数据时，数据包中含有头信息。头信与数据大小无关，是按照一定的格式填入的。假设头信息占 40 个字节，需要传输的数据量也存在较大区别：
 
 - 1 个字节 10 次：40*10=400 字节
-- 10个字节 1 次：40*1=40 字节。
+- 10个字节 1 次：40*1=40 字节
+
+另外，为了发送数据，向套接字输出缓冲移动数据也会消耗不少时间。这同样与移动次数有关。1 个字节数据共移动 10 次花费的时间将近 10 个字节数据移动 1 次花费时间的 10 倍。
 
 #### 15.1.2 标准 I/O 函数和系统函数之间的性能对比
 
 下面是利用系统函数的示例：
 
-- [syscpy.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch15/syscpy.c)
+- [syscpy.c](./syscpy.c)
 
 下面是使用标准 I/O 函数复制文件
 
-- [stdcpy.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch15/stdcpy.c)
+- [stdcpy.c](./stdcpy.c)
 
 对于以上两个代码进行测试，明显基于标准 I/O 函数的代码跑的更快
 
@@ -65,7 +69,7 @@ mode ： 将要创建的 FILE 结构体指针的模式信息
 
 以下为示例：
 
-- [desto.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch15/desto.c)
+- [desto.c](./desto.c)
 
 ```c
 #include <stdio.h>
@@ -115,7 +119,7 @@ int fileno(FILE *stream);
 
 示例：
 
-- [todes.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch15/todes.c)
+- [todes.c](./todes.c)
 
 ```c
 #include <stdio.h>
@@ -146,8 +150,8 @@ int main()
 
 代码如下：
 
-- [echo_client.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch15/echo_client.c)
-- [echo_stdserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch15/echo_stdserv.c)
+- [echo_client.c](./echo_client.c)
+- [echo_stdserv.c](./echo_stdserv.c)
 
 编译运行：
 

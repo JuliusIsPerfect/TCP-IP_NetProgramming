@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
     int len;
     char buf[BUF_SIZE];
 
+    // open() 返回一个整数文件描述符
     fd1 = open("news.txt", O_RDONLY);
     fd2 = open("cpy.txt", O_WRONLY | O_CREAT | O_TRUNC);
 

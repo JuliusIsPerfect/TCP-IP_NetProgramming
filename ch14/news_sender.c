@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
         printf("Usage : %s <GroupIP> <PORT>\n", argv[0]);
         exit(1);
     }
-    send_sock = socket(PF_INET, SOCK_DGRAM, 0); //创建  UDP 套接字
+    send_sock = socket(PF_INET, SOCK_DGRAM, 0); //创建 UDP 套接字
     memset(&mul_adr, 0, sizeof(mul_adr));
     mul_adr.sin_family = AF_INET;
     mul_adr.sin_addr.s_addr = inet_addr(argv[1]); //必须将IP地址设置为多播地址
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     if ((fp = fopen("news.txt", "r")) == NULL)
         error_handling("fopen() error");
 
-    while (!feof(fp)) //如果文件没结束就返回0
+    while (!feof(fp)) //如果文件流已经到达文件的末尾，那么 feof() 会返回一个非零值；否则，返回 0。
     {
         fgets(buf, BUF_SIZE, fp);
         sendto(send_sock, buf, strlen(buf), 0, (struct sockaddr *)&mul_adr, sizeof(mul_adr));

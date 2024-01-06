@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         printf("Usage : %s <GroupIP> <PORT>\n", argv[0]);
         exit(1);
     }
-    send_sock = socket(PF_INET, SOCK_DGRAM, 0); //创建  UDP 套接字
+    send_sock = socket(PF_INET, SOCK_DGRAM, 0); //创建 UDP 套接字
     memset(&broad_adr, 0, sizeof(broad_adr));
     broad_adr.sin_family = AF_INET;
     broad_adr.sin_addr.s_addr = inet_addr(argv[1]);

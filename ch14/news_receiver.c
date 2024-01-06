@@ -36,7 +36,8 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        //通过 recvfrom 函数接受多播数据。如果不需要知道传输数据的主机地址信息，可以向recvfrom函数的第5 6参数分贝传入 NULL 0
+        //通过 recvfrom 函数接受多播数据
+        //如果不需要知道传输数据的主机地址信息，可以向recvfrom的第5、6个参数传入 NULL, 0
         str_len = recvfrom(recv_sock, buf, BUF_SIZE - 1, 0, NULL, 0);
         if (str_len < 0)
             break;

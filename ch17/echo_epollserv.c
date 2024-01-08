@@ -38,12 +38,12 @@ int main(int argc, char *argv[])
     if (listen(serv_sock, 5) == -1)
         error_handling("listen() error");
 
-    epfd = epoll_create(EPOLL_SIZE); //可以忽略这个参数，填入的参数为操作系统参考
+    epfd = epoll_create(EPOLL_SIZE); //可以忽略这个参数，填入的参数仅作为操作系统参考
     ep_events = malloc(sizeof(struct epoll_event) * EPOLL_SIZE);
 
     event.events = EPOLLIN; //需要读取数据的情况
     event.data.fd = serv_sock;
-    epoll_ctl(epfd, EPOLL_CTL_ADD, serv_sock, &event); //例程epfd 中添加文件描述符 serv_sock，目的是监听 enevt 中的事件
+    epoll_ctl(epfd, EPOLL_CTL_ADD, serv_sock, &event); //例程 epfd 中添加文件描述符 serv_sock，目的是监听 event 中的事件
 
     while (1)
     {

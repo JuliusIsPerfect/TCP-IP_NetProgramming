@@ -15,6 +15,8 @@ int main(int argc, char *argv[])
     }
     sleep(10); //延迟进程终止时间
     puts("end of main");
+    // 执行 return 语句后终止进程，同时终止内部创建的线程
+    // 为保证线程的正常执行而添加这条语句
     return 0;
 }
 void *thread_main(void *arg) //传入的参数是 pthread_create 的第四个

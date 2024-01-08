@@ -59,7 +59,9 @@ void write_routine(int sock, char *buf)
         fgets(buf, BUF_SIZE, stdin);
         if (!strcmp(buf, "q\n") || !strcmp(buf, "Q\n"))
         {
-            shutdown(sock, SHUT_WR); //向服务器端传递 EOF,因为fork函数复制了文件描述度，所以通过1次close调用不够
+            // 向服务器端传递 EOF
+            // 因为 fork 函数复制了文件描述符，所以1次 close 不足以关闭连接
+            shutdown(sock, SHUT_WR);
             return;
         }
         write(sock, buf, strlen(buf));

@@ -2,6 +2,8 @@
 
 本章代码，在[TCP-IP-NetworkNote](https://github.com/riba2534/TCP-IP-NetworkNote)中可以找到。
 
+> 调用 fopen 函数打开文件后可以与文件交换数据，因此说调用 fopen 函数后创建了“流”(Stream)。此处的“流”是指“数据流动”，但通常可以比喻为“以数据收发为目的的一种桥梁”。希望各位将“流”理解为数据收发路径。
+
 ### 16.1 分离 I/O 流
 
 「分离 I/O 流」是一种常用表达。有 I/O 工具可区分二者，无论采用哪种方法，都可以认为是分离了 I/O 流。
@@ -34,12 +36,12 @@
 shutdown(sock,SHUT_WR);
 ```
 
-当时说过调用 shutdown 函数的基于半关闭的 EOF 传递方法。第十章的 [echo_mpclient.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch10/echo_mpclient.c) 添加了半关闭的相关代码。但是还没有讲采用 fdopen 函数怎么半关闭。那么是否是通过 fclose 函数关闭流呢？我们先试试
+当时说过调用 shutdown 函数的基于半关闭的 EOF 传递方法。第十章的 [echo_mpclient.c](../ch10/echo_mpclient.c) 添加了半关闭的相关代码。但是还没有讲采用 fdopen 函数怎么半关闭。那么是否是通过 fclose 函数关闭流呢？我们先试试
 
 下面是服务器端和客户端码：
 
-- [sep_clnt.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_clnt.c)
-- [sep_serv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_serv.c)
+- [sep_clnt.c](./sep_clnt.c)
+- [sep_serv.c](./sep_serv.c)
 
 编译运行：
 
@@ -96,47 +98,9 @@ gcc sep_serv.c -o serv
 
 下面给出两个函数原型：
 
-```c
-#include <unistd.h>
-int dup(int fildes);
-int dup2(int fildes, int fildes2);
-/*
-成功时返回复制的文件描述符，失败时返回 -1
-fildes : 需要复制的文件描述符
-fildes2 : 明确指定的文件描述符的整数值。
-*/
-```
-
 dup2 函数明确指定复制的文件描述符的整数值。向其传递大于 0 且小于进程能生成的最大文件描述符值时，该值将成为复制出的文件描述符值。下面是代码示例：
 
-- [dup.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/dup.c)
-
-```c
-#include <stdio.h>
-#include <unistd.h>
-
-int main(int argc, char *argv[])
-{
-    int cfd1, cfd2;
-    char str1[] = "Hi~ \n";
-    char str2[] = "It's nice day~ \n";
-
-    cfd1 = dup(1);        //复制文件描述符 1
-    cfd2 = dup2(cfd1, 7); //再次复制文件描述符,定为数值 7
-
-    printf("fd1=%d , fd2=%d \n", cfd1, cfd2);
-    write(cfd1, str1, sizeof(str1));
-    write(cfd2, str2, sizeof(str2));
-
-    close(cfd1);
-    close(cfd2); //终止复制的文件描述符，但是仍有一个文件描述符
-    write(1, str1, sizeof(str1));
-    close(1);
-    write(1, str2, sizeof(str2)); //无法完成输出
-    return 0;
-}
-
-```
+- [dup.c](./dup.c)
 
 编译运行：
 
@@ -151,13 +115,13 @@ gcc dup.c -o dup
 
 #### 16.2.4 复制文件描述符后「流」的分离
 
-下面更改 [sep_clnt.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_clnt.c) 和 [sep_serv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_serv.c) 可以使得让它正常工作，正常工作是指通过服务器的半关闭状态接收客户端最后发送的字符串。
+下面更改 [sep_clnt.c](./sep_clnt.c) 和 [sep_serv.c](./sep_serv.c) 可以使得让它正常工作，正常工作是指通过服务器的半关闭状态接收客户端最后发送的字符串。
 
 下面是代码：
 
-- [sep_serv2.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_serv2.c)
+- [sep_serv2.c](./sep_serv2.c)
 
-这个代码可以与 [sep_clnt.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch16/sep_clnt.c) 配合起来食用，编译过程和上面一样，运行结果为：
+这个代码可以与 [sep_clnt.c](./sep_clnt.c) 配合起来食用，编译过程和上面一样，运行结果为：
 
 ![](https://i.loli.net/2019/01/30/5c513d54a27e0.png)
 
@@ -169,17 +133,17 @@ gcc dup.c -o dup
 
    答：以下加粗内容代表说法正确。
 
-   1. 与 FILE 结构体指针相同，文件描述符也分输入描述符和输出描述符
-   2. 复制文件描述符时将生成相同值的描述符，可以通过这 2 个描述符进行 I/O
-   3. **可以利用创建套接字时返回的文件描述符进行 I/O ，也可以不通过文件描述符，直接通过 FILE 结构体指针完成**
-   4. **可以从文件描述符生成 FILE 结构体指针，而且可以利用这种 FILE 结构体指针进行套接字 I/O**
-   5. 若文件描述符为读模式，则基于该描述符生成的 FILE 结构体指针同样是读模式；若文件描述符为写模式，则基于该描述符生成的 FILE 结构体指针同样是写模式
+   1. 与 FILE 结构体指针相同，文件描述符也分输入描述符和输出描述符：文件描述符并不区分输入和输出，它只是一个整数。
+   2. 复制文件描述符时将生成相同值的描述符，可以通过这 2 个描述符进行 I/O：序号不相同。
+   3. **可以利用创建套接字时返回的文件描述符进行 I/O ，也可以不通过文件描述符，直接通过 FILE 结构体指针完成**。
+   4. **可以从文件描述符生成 FILE 结构体指针，而且可以利用这种 FILE 结构体指针进行套接字 I/O**。
+   5. 若文件描述符为读模式，则基于该描述符生成的 FILE 结构体指针同样是读模式；若文件描述符为写模式，则基于该描述符生成的 FILE 结构体指针同样是写模式：需要用参数指定模式。
 
 2. **EOF 的发送相关描述中错误的是**？
 
    答：以下加粗内容代表说法正确。
 
-   1. 终止文件描述符时发送 EOF
-   2. **即使未完成终止文件描述符，关闭输出流时也会发送 EOF**
+   1. 终止文件描述符时发送 EOF：断开连接时。
+   2. **即使未完成终止文件描述符，关闭输出流时也会发送 EOF**。
    3. 如果复制文件描述符，则包括复制的文件描述符在内，所有文件描述符都终止时才会发送 EOF
    4. **即使复制文件描述符，也可以通过调用 shutdown 函数进入半关闭状态并发送 EOF**

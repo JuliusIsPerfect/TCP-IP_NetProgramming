@@ -44,8 +44,10 @@ int main(int argc, char *argv[])
     epfd = epoll_create(EPOLL_SIZE); //可以忽略这个参数，填入的参数为操作系统参考
     ep_events = malloc(sizeof(struct epoll_event) * EPOLL_SIZE);
 
+    // 将accept函数创建的套接字改为非阻塞模式
+    // 向EPOLLIN添加EPOLLET标志，将套接字事件注册方式改为边缘触发
     setnonblockingmode(serv_sock);
-    event.events = EPOLLIN; //需要读取数据的情况
+    event.events = EPOLLIN|EPOLLET; //需要读取数据的情况
     event.data.fd = serv_sock;
     epoll_ctl(epfd, EPOLL_CTL_ADD, serv_sock, &event); //例程epfd 中添加文件描述符 serv_sock，目的是监听 enevt 中的事件
 
@@ -73,6 +75,7 @@ int main(int argc, char *argv[])
             }
             else //是客户端套接字时
             {
+                // 边缘触发方式中，发生事件时需要读取输入缓冲中的所有数据，因此需要循环调用read函数
                 while (1)
                 {
                     str_len = read(ep_events[i].data.fd, buf, BUF_SIZE);
@@ -85,7 +88,7 @@ int main(int argc, char *argv[])
                     }
                     else if (str_len < 0)
                     {
-                        if (errno == EAGAIN) //read 返回-1 且 errno 值为 EAGAIN ，意味读取了输入缓冲的全部数据
+                        if (errno == EAGAIN) // read 返回 -1 且 errno 值为 EAGAIN 时，意味读取了输入缓冲的全部数据
                             break;
                     }
                     else

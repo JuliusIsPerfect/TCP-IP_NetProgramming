@@ -8,14 +8,14 @@
 
 第 10 章介绍了多进程服务器端的实现方法。多进程模型与 select 和 epoll 相比的确有自身的优点，但同时也有问题。如前所述，创建（复制）进程的工作本身会给操作系统带来相当沉重的负担。而且，每个进程都具有独立的内存空间，所以进程间通信的实现难度也会随之提高。换言之，多进程的缺点可概括为：
 
-- 创建进程的过程会带来一定的开销
+- 创建进程的过程会带来一定的开销。
 - 为了完成进程间数据交换，需要特殊的 IPC 技术。
 
 但是更大的缺点是下面的：
 
-- 每秒少则 10 次，多则千次的「上下文切换」是创建进程的最大开销
+- 每秒少则 10 次，多则千次的「上下文切换(Context Switching)」是创建进程的最大开销。
 
-只有一个 CPU 的系统是将时间分成多个微小的块后分配给了多个进程。为了分时使用 CPU ，需要「上下文切换」的过程。「上下文切换」是指运行程序前需要将相应进程信息读入内存，如果运行进程 A 后紧接着需要运行进程 B ，就应该将进程 A 相关信息移出内存，并读入进程 B 相关信息。这就是上下文切换。但是此时进程 A 的数据将被移动到硬盘，所以上下文切换要很长时间，即使通过优化加快速度，也会存在一定的局限。
+只有一个 CPU CORE 的系统是将时间分成多个微小的块后分配给了多个进程。为了分时使用 CPU，需要「上下文切换」的过程。「上下文切换」是指运行程序前需要将相应进程信息读入内存，如果运行进程 A 后紧接着需要运行进程 B ，就应该将进程 A 相关信息移出内存，并读入进程 B 相关信息。这就是上下文切换。但是此时进程 A 的数据将被移动到硬盘，所以上下文切换要很长时间，即使通过优化加快速度，也会存在一定的局限。
 
 为了保持多进程的优点，同时在一定程度上克服其缺点，人们引入的线程（Thread）的概念。这是为了将进程的各种劣势降至最低程度（不是直接消除）而设立的一种「轻量级进程」。线程比进程具有如下优点：
 
@@ -26,7 +26,7 @@
 
 线程是为了解决：为了得到多条代码执行流而复制整个内存区域的负担太重。
 
-每个进程的内存空间都由保存全局变量的「数据区」、向 malloc 等函数动态分配提供空间的堆（Heap）、函数运行时间使用的栈（Stack）构成。每个进程都有独立的这种空间，多个进程的内存结构如图所示：
+每个进程的内存空间都由保存全局变量的「数据区」、向 malloc 等函数的动态分配提供空间的堆（Heap）、函数运行时间使用的栈（Stack）构成。每个进程都有独立的这种空间，多个进程的内存结构如图所示：
 
 ![](https://i.loli.net/2019/02/02/5c55aa57db3c7.png)
 
@@ -70,50 +70,17 @@ int pthread_create(pthread_t *restrict thread,
                    void *(*start_routine)(void *),
                    void *restrict arg);
 /*
-成功时返回 0 ，失败时返回 -1
-thread : 保存新创建线程 ID 的变量地址值。线程与进程相同，也需要用于区分不同线程的 ID
-attr : 用于传递线程属性的参数，传递 NULL 时，创建默认属性的线程
-start_routine : 相当于线程 main 函数的、在单独执行流中执行的函数地址值（函数指针）
-arg : 通过第三个参数传递的调用函数时包含传递参数信息的变量地址值
+成功时返回 0，失败时返回其他值
+thread: 保存新创建线程 ID 的变量地址值。线程与进程相同，也需要用于区分不同线程的 ID
+attr: 用于传递线程属性的参数，传递 NULL 时，创建默认属性的线程
+start_routine: 相当于线程 main 函数的、在单独执行流中执行的函数地址值（函数指针）
+arg: 通过第三个参数传递调用函数时包含传递参数信息的变量地址值
 */
 ```
 
 下面通过简单示例了解该函数功能：
 
-- [thread1.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread1.c)
-
-```c
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
-void *thread_main(void *arg);
-
-int main(int argc, char *argv[])
-{
-    pthread_t t_id;
-    int thread_param = 5;
-    // 请求创建一个线程，从 thread_main 调用开始，在单独的执行流中运行。同时传递参数
-    if (pthread_create(&t_id, NULL, thread_main, (void *)&thread_param) != 0)
-    {
-        puts("pthread_create() error");
-        return -1;
-    }
-    sleep(10); //延迟进程终止时间
-    puts("end of main");
-    return 0;
-}
-void *thread_main(void *arg) //传入的参数是 pthread_create 的第四个
-{
-    int i;
-    int cnt = *((int *)arg);
-    for (int i = 0; i < cnt; i++)
-    {
-        sleep(1);
-        puts("running thread");
-    }
-    return NULL;
-}
-```
+- [thread1.c](./thread1.c)
 
 编译运行：
 
@@ -130,6 +97,10 @@ gcc thread1.c -o tr1 -lpthread # 线程相关代码编译时需要添加 -lpthre
 
 ![](https://i.loli.net/2019/02/02/5c55b6943255b.png)
 
+如果把`sleep(10)`改成`sleep(2)`，运行后可以看到，此时不会像代码中写的那样输出5次"running thread"字符串。因为 main 函数返回后整个进程将被销毁，如图所示：
+
+![](../img/ch18-5.png)
+
 可以看出，程序在主进程没有结束时，生成的线程每隔一秒输出一次 `running thread` ，但是如果主进程没有等待十秒，而是直接结束，这样也会强制结束线程，不论线程有没有运行完毕。
 
 那是否意味着主进程必须每次都 sleep 来等待线程执行完毕？并不需要，可以通过以下函数解决。
@@ -138,58 +109,15 @@ gcc thread1.c -o tr1 -lpthread # 线程相关代码编译时需要添加 -lpthre
 #include <pthread.h>
 int pthread_join(pthread_t thread, void **status);
 /*
-成功时返回 0 ，失败时返回 -1
-thread : 该参数值 ID 的线程终止后才会从该函数返回
-status : 保存线程的 main 函数返回值的指针的变量地址值
+成功时返回 0，失败时返回其他值
+thread: 该参数值 ID 的线程终止后才会从该函数返回
+status: 保存线程的 main 函数返回值的指针变量的地址值
 */
 ```
 
-作用就是调用该函数的进程（或线程）将进入等待状态，知道第一个参数为 ID 的线程终止为止。而且可以得到线程的 main 函数的返回值。下面是该函数的用法代码：
+调用该函数的进程（或线程）将进入等待状态，直到第一个参数为 ID 的线程终止。而且可以得到线程的 main 函数的返回值。下面是该函数的用法：
 
-- [thread2.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread2.c)
-
-```c
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <pthread.h>
-void *thread_main(void *arg);
-
-int main(int argc, char *argv[])
-{
-    pthread_t t_id;
-    int thread_param = 5;
-    void *thr_ret;
-    // 请求创建一个线程，从 thread_main 调用开始，在单独的执行流中运行。同时传递参数
-    if (pthread_create(&t_id, NULL, thread_main, (void *)&thread_param) != 0)
-    {
-        puts("pthread_create() error");
-        return -1;
-    }
-    //main函数将等待 ID 保存在 t_id 变量中的线程终止
-    if (pthread_join(t_id, &thr_ret) != 0)
-    {
-        puts("pthread_join() error");
-        return -1;
-    }
-    printf("Thread return message : %s \n", (char *)thr_ret);
-    free(thr_ret);
-    return 0;
-}
-void *thread_main(void *arg) //传入的参数是 pthread_create 的第四个
-{
-    int i;
-    int cnt = *((int *)arg);
-    char *msg = (char *)malloc(sizeof(char) * 50);
-    strcpy(msg, "Hello,I'am thread~ \n");
-    for (int i = 0; i < cnt; i++)
-    {
-        sleep(1);
-        puts("running thread");
-    }
-    return (void *)msg; //返回值是 thread_main 函数中内部动态分配的内存空间地址值
-}
-```
+- [thread2.c](./thread2.c)
 
 编译运行：
 
@@ -259,7 +187,7 @@ gcc -D_REENTRANT mythread.c -o mthread -lpthread
 
 下面是代码：
 
-- [thread3.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread3.c)
+- [thread3.c](./thread3.c)
 
 ```c
 #include <stdio.h>
@@ -309,7 +237,7 @@ gcc thread3.c -D_REENTRANT -o tr3 -lpthread
 
 但是本例子本身存在问题。存在临界区相关问题，可以从下面的代码看出，下面的代码和上面的代码相似，只是增加了发生临界区错误的可能性，即使在高配置系统环境下也容易产生的错误：
 
-- [thread4.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread4.c)
+- [thread4.c](./thread4.c)
 
 ```c
 #include <stdio.h>
@@ -374,11 +302,11 @@ gcc thread4.c -D_REENTRANT -o tr4 -lpthread
 
 ### 18.3 线程存在的问题和临界区
 
-下面分析 [thread4.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread4.c) 中产生问题的原因，并给出解决方案。
+下面分析 [thread4.c](./thread4.c) 中产生问题的原因，并给出解决方案。
 
 #### 18.3.1 多个线程访问同一变量是问题
 
- [thread4.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread4.c) 的问题如下：
+ [thread4.c](./thread4.c) 的问题如下：
 
 > 2 个线程正在同时访问全局变量 num
 
@@ -491,9 +419,9 @@ pthread_mutex_lock(&mutex);
 pthread_mutex_unlock(&mutex);
 ```
 
-简言之，就是利用 lock 和 unlock 函数围住临界区的两端。此时互斥量相当于一把锁，阻止多个线程同时访问，还有一点要注意，线程退出临界区时，如果忘了调用 pthread_mutex_unlock 函数，那么其他为了进入临界区而调用 pthread_mutex_lock 的函数无法摆脱阻塞状态。这种情况称为「死锁」。需要格外注意，下面是利用互斥量解决示例 [thread4.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/thread4.c) 中遇到的问题代码：
+简言之，就是利用 lock 和 unlock 函数围住临界区的两端。此时互斥量相当于一把锁，阻止多个线程同时访问，还有一点要注意，线程退出临界区时，如果忘了调用 pthread_mutex_unlock 函数，那么其他为了进入临界区而调用 pthread_mutex_lock 的函数无法摆脱阻塞状态。这种情况称为「死锁」。需要格外注意，下面是利用互斥量解决示例 [thread4.c](./thread4.c) 中遇到的问题代码：
 
-- [mutex.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/mutex.c)
+- [mutex.c](./mutex.c)
 
 ```c
 #include <stdio.h>
@@ -631,7 +559,7 @@ sem_post(&sem);//信号量变为1...
 
 下面是代码：
 
-- [semaphore.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/semaphore.c)
+- [semaphore.c](./semaphore.c)
 
 ```c
 #include <stdio.h>
@@ -729,8 +657,8 @@ thread : 终止的同时需要销毁的线程 ID
 
 下面是多个客户端之间可以交换信息的简单聊天程序。
 
-- [chat_server.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/chat_server.c)
-- [chat_clnt.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch18/chat_clnt.c)
+- [chat_server.c](./chat_server.c)
+- [chat_clnt.c](./chat_clnt.c)
 
 上面的服务器端示例中，需要掌握临界区的构成，访问全局变量 clnt_cnt 和数组 clnt_socks 的代码将构成临界区，添加和删除客户端时，变量 clnt_cnt 和数组 clnt_socks 将同时发生变化。因此下列情形会导致数据不一致，从而引发错误：
 

@@ -13,26 +13,26 @@ select 复用方法由来已久，因此，利用该技术后，无论如何优�
 - 调用 select 函数后常见的针对所有文件描述符的循环语句
 - 每次调用 select 函数时都需要向该函数传递监视对象信息
 
-上述两点可以从 [echo_selectserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch12/echo_selectserv.c) 得到确认，调用 select 函数后，并不是把发生变化的文件描述符单独集中在一起，而是通过作为监视对象的 fd_set 变量的变化，找出发生变化的文件描述符（54,56行），因此无法避免针对所有监视对象的循环语句。而且，作为监视对象的 fd_set 会发生变化，所以调用 select 函数前应该复制并保存原有信息，并在每次调用 select 函数时传递新的监视对象信息。
+上述两点可以从 [echo_selectserv.c](../ch12/echo_selectserv.c) 得到确认，调用 select 函数后，并不是把发生变化的文件描述符单独集中在一起，而是通过观察作为监视对象的 fd_set 变量的变化，找出发生变化的文件描述符（54,56行），因此无法避免针对所有监视对象的循环语句。而且，作为监视对象的 fd_set 会发生变化，所以调用 select 函数前应该复制并保存原有信息，并在每次调用 select 函数时传递新的监视对象信息。
 
 select 性能上最大的弱点是：每次传递监视对象信息，准确的说，select 是监视套接字变化的函数。而套接字是操作系统管理的，所以 select 函数要借助操作系统才能完成功能。select 函数的这一缺点可以通过如下方式弥补：
 
 > 仅向操作系统传递一次监视对象，监视范围或内容发生变化时只通知发生变化的事项
 
-这样就无需每次调用 select 函数时都想操作系统传递监视对象信息，但是前提操作系统支持这种处理方式。Linux 的支持方式是 epoll ，Windows 的支持方式是 IOCP。
+这样就无需每次调用 select 函数时都想操作系统传递监视对象信息，但是前提操作系统支持这种处理方式。Linux 的支持方式是 epoll，Windows 的支持方式是 IOCP。
 
-#### 17.1.2 select 也有有点
+#### 17.1.2 select 也有优点
 
 select 的兼容性比较高，这样就可以支持很多的操作系统，不受平台的限制，使用 select 函数满足以下两个条件：
 
-- 服务器接入者少
+- 服务器端接入者少
 - 程序应该具有兼容性
 
 #### 17.1.3 实现 epoll 时必要的函数和结构体
 
 能够克服 select 函数缺点的 epoll 函数具有以下优点，这些优点正好与之前的 select 函数缺点相反。
 
-- 无需编写以监视状态变化为目的的针对所有文件描述符的循环语句
+- 无需编写以监视状态变化为目的的针对所有文件描述符的循环语句。
 - 调用对应于 select 函数的 epoll_wait 函数时无需每次传递监视对象信息。
 
 下面是 epoll 函数的功能：
@@ -41,7 +41,7 @@ select 的兼容性比较高，这样就可以支持很多的操作系统，不�
 - epoll_ctl：向空间注册并注销文件描述符
 - epoll_wait：与 select 函数类似，等待文件描述符发生变化
 
-select 函数中为了保存监视对象的文件描述符，直接声明了 fd_set 变量，但 epoll 方式下的操作系统负责保存监视对象文件描述符，因此需要向操作系统请求创建保存文件描述符的空间，此时用的函数就是 epoll_create 。
+select 函数中为了保存监视对象的文件描述符，直接声明了 fd_set 变量，但 epoll 方式下由操作系统负责保存监视对象文件描述符，因此需要向操作系统请求创建保存文件描述符的空间，此时用的函数就是 epoll_create。
 
 此外，为了添加和删除监视对象文件描述符，select 方式中需要 FD_SET、FD_CLR 函数。但在 epoll 方式中，通过 epoll_ctl 函数请求操作系统完成。最后，select 方式下调用 select 函数等待文件描述符的变化，而 epoll_wait 调用 epoll_wait 函数。还有，select 方式中通过 fd_set 变量查看监视对象的状态变化，而 epoll 方式通过如下结构体 epoll_event 将发生变化的文件描述符单独集中在一起。
 
@@ -60,7 +60,7 @@ typedef union epoll_data {
 
 ```
 
-声明足够大的 epoll_event 结构体数组候，传递给 epoll_wait 函数时，发生变化的文件描述符信息将被填入数组。因此，无需像 select 函数那样针对所有文件描述符进行循环。
+声明足够大的 epoll_event 结构体数组后，传递给 epoll_wait 函数时，发生变化的文件描述符信息将被填入数组。因此，无需像 select 函数那样针对所有文件描述符进行循环。
 
 #### 17.1.4 epoll_create
 
@@ -83,7 +83,7 @@ size：epoll 实例的大小
 
 调用 epoll_create 函数时创建的文件描述符保存空间称为「epoll 例程」，但有些情况下名称不同，需要稍加注意。通过参数 size 传递的值决定 epoll 例程的大小，但该值只是向操作系统提出的建议。换言之，size 并不用来决定 epoll 的大小，而仅供操作系统参考。
 
-> Linux 2.6.8 之后的内核将完全传入 epoll_create 函数的 size 函数，因此内核会根据情况调整 epoll 例程大小。但是本书程序并没有忽略 size
+> Linux 2.6.8 之后的内核将完全忽略传入 epoll_create 函数的 size 函数，因为内核会根据情况调整 epoll 例程大小。但是本书程序并没有忽略 size。
 
 epoll_create 函数创建的资源与套接字相同，也由操作系统管理。因此，该函数和创建套接字的情况相同，也会返回文件描述符，也就是说返回的文件描述符主要用于区分 epoll 例程。需要终止时，与其他文件描述符相同，也要调用 close 函数
 
@@ -131,18 +131,18 @@ epoll_ctl(A,EPOLL_CTL_DEL,B,NULL);
 - EPOLL_CTL_DEL：从 epoll 例程中删除文件描述符
 - EPOLL_CTL_MOD：更改注册的文件描述符的关注事件发生情况
 
-epoll_event 结构体用于保存事件的文件描述符结合。但也可以在 epoll 例程中注册文件描述符时，用于注册关注的事件。该函数中 epoll_event 结构体的定义并不显眼，因此通过掉英语剧说明该结构体在 epoll_ctl 函数中的应用。
+epoll_event 结构体用于保存发生事件的文件描述符集合。但也可以在 epoll 例程中注册文件描述符时，用于**注册关注的事件**。该函数中 epoll_event 结构体的定义并不显眼，因此通过调用语句说明该结构体在 epoll_ctl 函数中的应用。
 
 ```c
 struct epoll_event event;
 ...
-event.events=EPOLLIN;//发生需要读取数据的情况时
+event.events=EPOLLIN; // 发生需要读取数据的情况时
 event.data.fd=sockfd;
-epoll_ctl(epfd,EPOLL_CTL_ADD,sockfd,&event);
+epoll_ctl(epfd, EPOLL_CTL_ADD, sockfd, &event);
 ...
 ```
 
-上述代码将 epfd 注册到 epoll 例程 epfd 中，并在需要读取数据的情况下产生相应事件。接下来给出 epoll_event 的成员 events 中可以保存的常量及所指的事件类型。
+上述代码将 sockfd 注册到 epoll 例程 epfd 中，并在需要读取数据的情况下产生相应事件。接下来给出 epoll_event 的成员 events 中可以保存的常量及所指的事件类型。
 
 - EPOLLIN：需要读取数据的情况
 - EPOLLOUT：输出缓冲为空，可以立即发送数据的情况
@@ -150,9 +150,9 @@ epoll_ctl(epfd,EPOLL_CTL_ADD,sockfd,&event);
 - EPOLLRDHUP：断开连接或半关闭的情况，这在边缘触发方式下非常有用
 - EPOLLERR：发生错误的情况
 - EPOLLET：以边缘触发的方式得到事件通知
-- EPOLLONESHOT：发生一次事件后，相应文件描述符不再收到事件通知。因此需要向 epoll_ctl 函数的第二个参数传递 EPOLL_CTL_MOD ，再次设置事件。
+- EPOLLONESHOT：发生一次事件后，相应文件描述符不再收到事件通知。因此需要向 epoll_ctl 函数的第二个参数传递 EPOLL_CTL_MOD，再次设置事件。
 
-可通过位运算同事传递多个上述参数。
+可通过`|`同时传递多个上述参数。
 
 #### 17.1.6 epoll_wait
 
@@ -186,9 +186,9 @@ event_cnt=epoll_wait(epfd,ep_events,EPOLL_SIZE,-1);
 
 #### 17.1.7 基于 epoll 的回声服务器端
 
-下面是回声服务器端的代码（修改自第 12 章 [echo_selectserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch12/echo_selectserv.c)）：
+下面是回声服务器端的代码（修改自第 12 章 [echo_selectserv.c](../ch12/echo_selectserv.c)）：
 
-- [echo_epollserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch17/echo_epollserv.c)
+- [echo_epollserv.c](./echo_epollserv.c)
 
 编译运行：
 
@@ -210,7 +210,7 @@ gcc echo_epollserv.c -o serv
 1.  epoll_create 创建一个保存 epoll 文件描述符的空间，可以没有参数
 2. 动态分配内存，给将要监视的 epoll_wait
 3. 利用 epoll_ctl 控制 添加 删除，监听事件
-4. 利用 epoll_wait 来获取改变的文件描述符,来执行程序
+4. 利用 epoll_wait 来获取改变的文件描述符，来执行程序
 
 select 和 epoll 的区别：
 
@@ -235,9 +235,9 @@ select 和 epoll 的区别：
 
 #### 17.2.2 掌握条件触发的事件特性
 
-下面代码修改自 [echo_epollserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch17/echo_epollserv.c) 。epoll 默认以条件触发的方式工作，因此可以通过该示例验证条件触发的特性。
+下面代码修改自 [echo_epollserv.c](./echo_epollserv.c) 。epoll 默认以条件触发的方式工作，因此可以通过该示例验证条件触发的特性。
 
-- [echo_EPLTserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch17/echo_EPLTserv.c)
+- [echo_EPLTserv.c](./echo_EPLTserv.c)
 
 上面的代码把调用 read 函数时使用的缓冲大小缩小到了 4 个字节，插入了验证 epoll_wait 调用次数的验证函数。减少缓冲大小是为了阻止服务器端一次性读取接收的数据。换言之，调用 read 函数后，输入缓冲中仍有数据要读取，而且会因此注册新的事件并从 epoll_wait 函数返回时将循环输出「return epoll_wait」字符串。
 
@@ -252,7 +252,7 @@ gcc echo_EPLTserv.c -o serv
 
 ![](https://i.loli.net/2019/02/01/5c540825ae415.png)
 
-从结果可以看出，每当收到客户端数据时，都回注册该事件，并因此调用 epoll_wait 函数。
+从结果可以看出，每当收到客户端数据时，都会注册该事件，并因此多次调用 epoll_wait 函数。
 
 下面的代码是修改后的边缘触发方式的代码，仅仅是把上面的代码改为：
 
@@ -262,7 +262,7 @@ gcc echo_EPLTserv.c -o serv
 
 代码：
 
-- [echo_EDGEserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch17/echo_EDGEserv.c)
+- [echo_EDGEserv.c](./echo_EDGEserv.c)
 
 编译运行：
 
@@ -276,6 +276,8 @@ gcc echo_EDGEserv.c -o serv
 ![](https://i.loli.net/2019/02/01/5c54097b6469f.png)
 
 从上面的例子看出，接收到客户端的消息时，只输出一次「return epoll_wait」字符串，这证明仅注册了一次事件。
+
+> 我的理解是仅被epoll_wait()报告了一次这个客户端套接字要读取数据，之后就算输入缓冲还有数据，但也不会被epoll_wait算进去了。
 
 **select 模型是以条件触发的方式工作的**。
 
@@ -327,7 +329,7 @@ fcntl(fd,F_SETFL | O_NONBLOCK)
 
 下面是以边缘触发方式工作的回声服务器端代码：
 
-- [echo_EPETserv.c](https://github.com/riba2534/TCP-IP-NetworkNote/blob/master/ch17/echo_EPETserv.c)
+- [echo_EPETserv.c](./echo_EPETserv.c)
 
 编译运行：
 
@@ -338,11 +340,36 @@ gcc echo_EPETserv.c -o serv
 
 结果：
 
-![](https://i.loli.net/2019/02/01/5c542149c0cee.png)
+服务器端
+
+```shell
+./serv 9190
+return epoll wait
+connected client: 5
+return epoll.wait
+return epoll.wait
+return epoll_wait 
+return epoll_wait 
+closed client: 5
+```
+
+客户端
+
+```shell
+./clnt 127.0.0.1 9190 Connected...........
+Input message(Q to quit): I like computer programming
+Message from server: I like computer programming
+Input message(Q to quit): Do you like computer programming?
+Message from server: Do you like computer programming?
+Input message(Q to quit): Good bye
+Message from server: Good bye
+Input message(Q to quit): Q
+```
+客户端从请求连接到断开连接共发送 5 次数据，服务器端也相应产生 5 个事件。
 
 #### 17.2.5 条件触发和边缘触发孰优孰劣
 
-边缘触发方式可以做到这点：
+边缘触发相对于条件触发方式，可以做到：
 
 > 可以分离接收数据和处理数据的时间点！
 
@@ -352,22 +379,32 @@ gcc echo_EPETserv.c -o serv
 
 运行流程如下：
 
-- 服务器端分别从 A B C 接收数据
-- 服务器端按照  A B C 的顺序重新组合接收到的数据
+- 服务器端分别从 A B C 接收数据。
+- 服务器端按照 A B C 的顺序重新组合接收到的数据。
 - 组合的数据将发送给任意主机。
 
 为了完成这个过程，如果可以按照如下流程运行，服务器端的实现并不难：
 
-- 客户端按照 A B C 的顺序连接服务器，并且按照次序向服务器发送数据
-- 需要接收数据的客户端应在客户端 A B C 之前连接到服务器端并等待
+- 客户端按照 A B C 的顺序连接服务器，并且按照次序向服务器发送数据。
+- 需要接收数据的客户端应在客户端 A B C 之前连接到服务器端并等待。
 
 但是实际情况中可能是下面这样：
 
-- 客户端 C 和 B 正在向服务器发送数据，但是 A 并没有连接到服务器
-- 客户端 A B C 乱序发送数据
+- 客户端 C 和 B 正在向服务器发送数据，但是 A 并没有连接到服务器。
+- 客户端 A B C 乱序发送数据。
 - 服务器端已经接收到数据，但是要接收数据的目标客户端并没有连接到服务器端。
 
-因此，即使输入缓冲收到数据，服务器端也能决定读取和处理这些数据的时间点，这样就给服务器端的实现带来很大灵活性。
+因此，即使输入缓冲收到数据（注册相应事件），服务器端也能决定读取和处理这些数据的时间点，这样就给服务器端的实现带来很大灵活性。
+
+
+| 特征       | 条件触发                 | 边缘触发                         |
+|-----------|-------------------------|---------------------------------|
+| 通知       | 只要条件成立就重复通知     | 仅在条件改变时通知一次                |
+| 处理堆积数据 | 更容易，因为通知会继续    | 需要明确地重新注册                |
+| 效率       | 对不频繁的事件效率较低     | 对短事件效率更高                 |
+| 错过事件    | 由于重复通知，可能性较小   | 如果没有及时重新注册，则可能错过事件 |
+| I/O 模型   | 轮询、阻塞式 I/O     | 事件驱动、非阻塞式 I/O          |
+
 
 ### 17.3 习题
 

@@ -189,39 +189,6 @@ gcc -D_REENTRANT mythread.c -o mthread -lpthread
 
 - [thread3.c](./thread3.c)
 
-```c
-#include <stdio.h>
-#include <pthread.h>
-void *thread_summation(void *arg);
-int sum = 0;
-
-int main(int argc, char *argv[])
-{
-    pthread_t id_t1, id_t2;
-    int range1[] = {1, 5};
-    int range2[] = {6, 10};
-
-    pthread_create(&id_t1, NULL, thread_summation, (void *)range1);
-    pthread_create(&id_t2, NULL, thread_summation, (void *)range2);
-
-    pthread_join(id_t1, NULL);
-    pthread_join(id_t2, NULL);
-    printf("result: %d \n", sum);
-    return 0;
-}
-void *thread_summation(void *arg)
-{
-    int start = ((int *)arg)[0];
-    int end = ((int *)arg)[1];
-    while (start <= end)
-    {
-        sum += start;
-        start++;
-    }
-    return NULL;
-}
-```
-
 编译运行：
 
 ```shell
@@ -238,54 +205,6 @@ gcc thread3.c -D_REENTRANT -o tr3 -lpthread
 但是本例子本身存在问题。存在临界区相关问题，可以从下面的代码看出，下面的代码和上面的代码相似，只是增加了发生临界区错误的可能性，即使在高配置系统环境下也容易产生的错误：
 
 - [thread4.c](./thread4.c)
-
-```c
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <pthread.h>
-#define NUM_THREAD 100
-
-void *thread_inc(void *arg);
-void *thread_des(void *arg);
-long long num = 0;
-
-int main(int argc, char *argv[])
-{
-    pthread_t thread_id[NUM_THREAD];
-    int i;
-
-    printf("sizeof long long: %d \n", sizeof(long long));
-    for (i = 0; i < NUM_THREAD; i++)
-    {
-        if (i % 2)
-            pthread_create(&(thread_id[i]), NULL, thread_inc, NULL);
-        else
-            pthread_create(&(thread_id[i]), NULL, thread_des, NULL);
-    }
-
-    for (i = 0; i < NUM_THREAD; i++)
-        pthread_join(thread_id[i], NULL);
-
-    printf("result: %lld \n", num);
-    return 0;
-}
-
-void *thread_inc(void *arg)
-{
-    int i;
-    for (i = 0; i < 50000000; i++)
-        num += 1;
-    return NULL;
-}
-void *thread_des(void *arg)
-{
-    int i;
-    for (i = 0; i < 50000000; i++)
-        num -= 1;
-    return NULL;
-}
-```
 
 编译运行：
 
@@ -306,21 +225,21 @@ gcc thread4.c -D_REENTRANT -o tr4 -lpthread
 
 #### 18.3.1 多个线程访问同一变量是问题
 
- [thread4.c](./thread4.c) 的问题如下：
+[thread4.c](./thread4.c) 的问题如下：
 
-> 2 个线程正在同时访问全局变量 num
+> 2 个线程正在同时访问全局变量 num。
 
 任何内存空间，只要被同时访问，都有可能发生问题。
 
-因此，线程访问变量 num 时应该阻止其他线程访问，直到线程 1 运算完成。这就是同步（Synchronization）
+因此，线程访问变量 num 时应该阻止其他线程访问，直到线程 1 运算完成。这就是同步（Synchronization）。
 
 #### 18.3.2 临界区位置
 
-那么在刚才代码中的临界区位置是：
+临界区定义为：
 
-> 函数内同时运行多个线程时引发问题的多条语句构成的代码块
+> 函数内同时运行多个线程时引发问题的多条语句构成的代码块。
 
-全局变量 num 不能视为临界区，因为他不是引起问题的语句，只是一个内存区域的声明。下面是刚才代码的两个 main 函数
+全局变量 num 不能视为临界区，因为它不是引起问题的语句，只是一个内存区域的声明。临界区通常位于由线程运行的函数内部。下面是[thread4.c](./thread4.c)的两个 main 函数
 
 ```c
 void *thread_inc(void *arg)
@@ -339,15 +258,15 @@ void *thread_des(void *arg)
 }
 ```
 
-由上述代码可知，临界区并非 num 本身，而是访问 num 的两条语句，这两条语句可能由多个线程同时运行，也是引起这个问题的直接原因。产生问题的原因可以分为以下三种情况：
+由上述代码可知，临界区并非 num 本身，而是访问 num 的两条语句，这两条语句可能由多个线程同时运行，也是引起这个问题的直接原因。产生的问题可以分为以下三种情况：
 
 - 2 个线程同时执行 thread_inc 函数
 - 2 个线程同时执行 thread_des 函数
 - 2 个线程分别执行 thread_inc 和 thread_des 函数
 
-比如发生以下情况：
+需要关注最后一点，它意味着如下情况下也会引发问题：
 
-> 线程 1 执行 thread_inc 的 num+=1 语句的同时，线程 2  执行 thread_des 函数的 num-=1 语句
+> 线程 1 执行 thread_inc 的 num+=1 语句的同时，线程 2  执行 thread_des 函数的 num-=1 语句。
 
 也就是说，两条不同的语句由不同的线程执行时，也有可能构成临界区。前提是这 2 条语句访问同一内存空间。
 
@@ -390,7 +309,7 @@ attr : 传递即将创建的互斥量属性，没有特别需要指定的属性�
 pthread_mutex_t mutex
 ```
 
-该变量的地址值传递给 pthread_mutex_init 函数，用来保存操作系统创建的互斥量（锁系统）。调用 pthread_mutex_destroy 函数时同样需要该信息。如果不需要配置特殊的互斥量属性，则向第二个参数传递 NULL 时，可以利用 PTHREAD_MUTEX_INITIALIZER 进行如下声明：
+该变量的地址值传递给 pthread_mutex_init 函数，用来保存操作系统创建的互斥量（锁系统）。调用 pthread_mutex_destroy 函数时同样需要该信息。如果不需要配置特殊的互斥量属性，则向第二个参数传递 NULL 时，可以利用 PTHREAD_MUTEX_INITIALIZER 宏进行如下声明：
 
 ```c
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -405,7 +324,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 int pthread_mutex_lock(pthread_mutex_t *mutex);
 int pthread_mutex_unlock(pthread_mutex_t *mutex);
 /*
-成功时返回 0 ，失败时返回其他值
+成功时返回 0，失败时返回其他值
 */
 ```
 

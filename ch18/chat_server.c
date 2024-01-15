@@ -14,6 +14,8 @@ void *handle_clnt(void *arg);
 void send_msg(char *msg, int len);
 void error_handling(char *msg);
 
+// 用于管理接入的客户端套接字的变量和数组
+// 访问这2个变量的代码将构成临界区
 int clnt_cnt = 0;
 int clnt_socks[MAX_CLNT];
 pthread_mutex_t mutx;
@@ -74,6 +76,7 @@ void *handle_clnt(void *arg)
     {
         if (clnt_sock == clnt_socks[i])
         {
+            // i 后的 clnt_socks 都在数组里向前移一位
             while (i++ < clnt_cnt - 1)
                 clnt_socks[i] = clnt_socks[i + 1];
             break;

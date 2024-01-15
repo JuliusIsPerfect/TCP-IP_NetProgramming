@@ -342,61 +342,6 @@ pthread_mutex_unlock(&mutex);
 
 - [mutex.c](./mutex.c)
 
-```c
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <pthread.h>
-#define NUM_THREAD 100
-void *thread_inc(void *arg);
-void *thread_des(void *arg);
-
-long long num = 0;
-pthread_mutex_t mutex; //保存互斥量读取值的变量
-
-int main(int argc, char *argv[])
-{
-    pthread_t thread_id[NUM_THREAD];
-    int i;
-
-    pthread_mutex_init(&mutex, NULL); //创建互斥量
-
-    for (i = 0; i < NUM_THREAD; i++)
-    {
-        if (i % 2)
-            pthread_create(&(thread_id[i]), NULL, thread_inc, NULL);
-        else
-            pthread_create(&(thread_id[i]), NULL, thread_des, NULL);
-    }
-
-    for (i = 0; i < NUM_THREAD; i++)
-        pthread_join(thread_id[i], NULL);
-
-    printf("result: %lld \n", num);
-    pthread_mutex_destroy(&mutex); //销毁互斥量
-    return 0;
-}
-
-void *thread_inc(void *arg)
-{
-    int i;
-    pthread_mutex_lock(&mutex); //上锁
-    for (i = 0; i < 50000000; i++)
-        num += 1;
-    pthread_mutex_unlock(&mutex); //解锁
-    return NULL;
-}
-void *thread_des(void *arg)
-{
-    int i;
-    pthread_mutex_lock(&mutex);
-    for (i = 0; i < 50000000; i++)
-        num -= 1;
-    pthread_mutex_unlock(&mutex);
-    return NULL;
-}
-```
-
 编译运行：
 
 ```shell
@@ -480,61 +425,6 @@ sem_post(&sem);//信号量变为1...
 
 - [semaphore.c](./semaphore.c)
 
-```c
-#include <stdio.h>
-#include <pthread.h>
-#include <semaphore.h>
-
-void *read(void *arg);
-void *accu(void *arg);
-static sem_t sem_one;
-static sem_t sem_two;
-static int num;
-
-int main(int argc, char const *argv[])
-{
-    pthread_t id_t1, id_t2;
-    sem_init(&sem_one, 0, 0);
-    sem_init(&sem_two, 0, 1);
-
-    pthread_create(&id_t1, NULL, read, NULL);
-    pthread_create(&id_t2, NULL, accu, NULL);
-
-    pthread_join(id_t1, NULL);
-    pthread_join(id_t2, NULL);
-
-    sem_destroy(&sem_one);
-    sem_destroy(&sem_two);
-    return 0;
-}
-
-void *read(void *arg)
-{
-    int i;
-    for (i = 0; i < 5; i++)
-    {
-        fputs("Input num: ", stdout);
-
-        sem_wait(&sem_two);
-        scanf("%d", &num);
-        sem_post(&sem_one);
-    }
-    return NULL;
-}
-void *accu(void *arg)
-{
-    int sum = 0, i;
-    for (i = 0; i < 5; i++)
-    {
-        sem_wait(&sem_one);
-        sum += num;
-        sem_post(&sem_two);
-    }
-    printf("Result: %d \n", sum);
-    return NULL;
-}
-```
-
 编译运行：
 
 ```shell
@@ -546,7 +436,7 @@ gcc semaphore.c -D_REENTRANT -o sema -lpthread
 
 ![](https://i.loli.net/2019/02/03/5c568c2717d1e.png)
 
-从上述代码可以看出，设置了两个信号量 one 的初始值为 0 ，two 的初始值为 1，然后在调用函数的时候，「读」的前提是 two 可以减一，如果不能减一就会阻塞在这里，一直等到「计算」操作完毕后，给 two 加一，然后就可以继续执行下一句输入。对于「计算」函数，也一样。
+从上述代码可以看出，设置了两个信号量 one 的初始值为 0 ，two 的初始值为 1，然后在调用函数的时候，read 的前提是 `sem_two` 大于等于 1，如果不能减 1 就会阻塞在这里，一直等到 accu 操作完毕后，给 `sem_two` 加 1，然后就可以继续执行下一句输入。对于 accu 函数，也一样。
 
 ### 18.5 线程的销毁和多线程并发服务器端的实现
 
@@ -565,8 +455,8 @@ Linux 的线程并不是在首次调用的线程 main 函数返回时自动销�
 #include <pthread.h>
 int pthread_detach(pthread_t th);
 /*
-成功时返回 0 ，失败时返回其他值
-thread : 终止的同时需要销毁的线程 ID
+成功时返回 0，失败时返回其他值
+thread: 终止的同时需要销毁的线程 ID
 */
 ```
 
@@ -604,7 +494,7 @@ gcc chat_clnt.c -D_REENTRANT -o cclnt -lpthread
 
 1. **单 CPU 系统中如何同时执行多个进程？请解释该过程中发生的上下文切换**。
 
-   答：系统将 CPU 时间分成多个微笑的块后分配给了多个进程。为了分时使用 CPU ，需要「上下文切换」过程。运行程序前需要将相应进程信息读入内存，如果运行进程 A 后需要紧接着运行进程 B ，就应该将进程 A 相关今夕移出内存，并读入进程 B 的信息。这就是上下文切换
+   答：系统将 CPU 时间分成多个微小的块后分配给了多个进程。为了分时使用 CPU ，需要「上下文切换」过程：运行程序前需要将相应进程信息读入内存，如果运行进程 A 后需要紧接着运行进程 B ，就应该将进程 A 相关信息移出内存，并读入进程 B 的信息。
 
 2. **为何线程的上下文切换速度相对更快？线程间数据交换为何不需要类似 IPC 特别技术**。
 
